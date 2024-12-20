@@ -2,7 +2,10 @@
 This module provides a FastAPI application that uses Playwright to fetch and return
 the HTML content of a specified URL. It supports optional proxy settings and media blocking.
 """
-
+import time
+import uvicorn
+import base64
+import tempfile
 from os import environ
 
 from fastapi import FastAPI, Response
@@ -24,6 +27,8 @@ class UrlModel(BaseModel):
     wait_after_load: int = 0
     timeout: int = 15000
     headers: dict = None
+    screenshot: bool = False
+    screenshot_full_page: bool = False
 
 browser: Browser = None
 
@@ -95,15 +100,29 @@ async def root(body: UrlModel):
     )
     page_status_code = response.status
     page_error = get_error(page_status_code)
+    screenshot = None
     # Wait != timeout. Wait is the time to wait after the page is loaded - useful in some cases were "load" / "networkidle" is not enough
     if body.wait_after_load > 0:
         await page.wait_for_timeout(body.wait_after_load)
 
     page_content = await page.content()
+    if body.screenshot or body.screenshot_full_page:
+        tmp_dir = tempfile.gettempdir()
+        tmp_file = '{}/screenshot_{}.png'.format(tmp_dir, time.time())
+        await page.screenshot(path=tmp_file, full_page=body.screenshot_full_page)
+        with open(tmp_file, "rb") as image_file:
+            screenshot = base64.b64encode(image_file.read()).decode('utf-8')
+
     await context.close()
     json_compatible_item_data = {
         "content": page_content,
         "pageStatusCode": page_status_code,
         "pageError": page_error
       }
+    if screenshot:
+        json_compatible_item_data['screenshot'] = screenshot
     return JSONResponse(content=json_compatible_item_data)
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=5003)

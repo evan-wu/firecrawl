@@ -14,7 +14,7 @@ WORKDIR /app
 COPY requirements.txt ./
 
 # Remove py which is pulled in by retry, py is not needed and is a CVE
-RUN pip install --no-cache-dir --upgrade -r requirements.txt && \
+RUN pip install --no-cache-dir --upgrade -r requirements.txt --index-url=https://pypi.tuna.tsinghua.edu.cn/simple && \
     pip uninstall -y py && \
     playwright install chromium && playwright install-deps chromium && \
     ln -s /usr/local/bin/supervisord /usr/bin/supervisord
