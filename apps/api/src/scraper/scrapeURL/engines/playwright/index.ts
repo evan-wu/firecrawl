@@ -32,6 +32,7 @@ export async function scrapeURLWithPlaywright(
         content: z.string(),
         pageStatusCode: z.number(),
         pageError: z.string().optional(),
+        screenshot: z.string().optional(),
       }),
     }),
     (async () => {
