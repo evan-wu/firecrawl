@@ -28,12 +28,13 @@ export async function scrapeURLWithPlaywright(
       },
       method: "POST",
       logger: meta.logger.child("scrapeURLWithPlaywright/robustFetch"),
-      schema: z.object({
-        content: z.string(),
-        pageStatusCode: z.number(),
-        pageError: z.string().optional(),
-        screenshot: z.string().optional(),
-      }),
+      schema: z.any(),
+      // schema: z.object({
+      //   content: z.string(),
+      //   pageStatusCode: z.number(),
+      //   pageError: z.string().optional(),
+      //   screenshot: z.string().optional(),
+      // }),
     }),
     (async () => {
       await new Promise((resolve) => setTimeout(() => resolve(null), timeout));
