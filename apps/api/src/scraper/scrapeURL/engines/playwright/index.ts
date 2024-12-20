@@ -19,6 +19,10 @@ export async function scrapeURLWithPlaywright(
       body: {
         url: meta.url,
         wait_after_load: meta.options.waitFor,
+        screenshot: meta.options.formats.includes("screenshot"),
+        screenshot_full_page: meta.options.formats.includes(
+          "screenshot@fullPage",
+        ),
         timeout,
         headers: meta.options.headers,
       },
@@ -44,5 +48,10 @@ export async function scrapeURLWithPlaywright(
     html: response.content,
     statusCode: response.pageStatusCode,
     error: response.pageError,
+    ...(response.screenshot
+        ? {
+            screenshot: `data:image/png;base64,${response.screenshot}`,
+          }
+        : {}),
   };
 }
