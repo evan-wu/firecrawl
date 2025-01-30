@@ -10,7 +10,7 @@ from os import environ
 
 from fastapi import FastAPI, Response
 from fastapi.responses import JSONResponse
-from playwright.async_api import Browser, async_playwright
+from playwright.async_api import Browser, async_playwright, Error
 from pydantic import BaseModel
 from get_error import get_error
 
@@ -105,7 +105,13 @@ async def root(body: UrlModel):
     if body.wait_after_load > 0:
         await page.wait_for_timeout(body.wait_after_load)
 
-    page_content = await page.content()
+    try:
+        page_content = await page.content()
+    except Error as err:
+        if err.message == "Unable to retrieve content because the page is navigating and changing the content.":
+            return await page.content()
+        raise
+
     if body.screenshot or body.screenshot_full_page:
         tmp_dir = tempfile.gettempdir()
         tmp_file = '{}/screenshot_{}.png'.format(tmp_dir, time.time())
