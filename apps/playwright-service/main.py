@@ -37,7 +37,7 @@ async def startup_event():
     """Event handler for application startup to initialize the browser."""
     global browser
     playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch()
+    browser = await playwright.firefox.launch()
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -108,9 +108,22 @@ async def root(body: UrlModel):
     try:
         page_content = await page.content()
     except Error as err:
-        if err.message == "Unable to retrieve content because the page is navigating and changing the content.":
-            return await page.content()
-        raise
+        err_msg = err.message
+        retry_count = 0
+        while "Unable to retrieve content because the page is navigating and changing the content." in err_msg \
+                and retry_count < 50:
+            retry_count += 1
+            try:
+                print("The page is redirecting, try one more time.", err_msg)
+                await page.wait_for_timeout(3000)
+                page_content = await page.content()
+            except Error as inner_err:
+                print("Inner error:", inner_err)
+                err_msg = inner_err.message
+
+        if "Unable to retrieve content because the page is navigating and changing the content." not in err_msg:
+            print("Other error:", err_msg)
+            raise err
 
     if body.screenshot or body.screenshot_full_page:
         tmp_dir = tempfile.gettempdir()
